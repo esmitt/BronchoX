@@ -1,6 +1,7 @@
 BronchoX
 ===================
-Using the [<i class="icon-file"></i> Google C++ Documentation](https://google.github.io/styleguide/cppguide.html) to follow a standard guideline
+[comment]: <> (Using the [<i class="icon-file"></i> Google C++ Documentation](https://google.github.io/styleguide/cppguide.html) to follow a standard guideline)
+For now, mixing VTK and OpenCV in a good way. The idea is to extract frames from render in order to be manipulated by OpenCV
 
 ----------
 #### Initial Setup
