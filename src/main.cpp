@@ -5,8 +5,10 @@
 #include <vtkCommand.h>
 #include <vtkRenderer.h>
 #include <vtkRendererCollection.h>
+#include <vtkProgressObserver.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
+#include <vtkOBJReader.h>
 #include <vtkRendererCollection.h>
 #include <vtkWindows.h>
 #include <vtkCamera.h>
@@ -16,9 +18,17 @@
 #include <vtkRenderer.h>
 #include <vtkWindowToImageFilter.h>
 
+#include <vtkTriangleFilter.h>
+#include <vtkLoopSubdivisionFilter.h>
+
+#include "graph.h"
+#include "navigation.h"
+
 #include <opencv2\highgui\highgui.hpp>
 #include <opencv2\core\core.hpp>
 #include <opencv2\imgproc\imgproc.hpp>
+
+#include <fstream>
 
 using namespace cv;
 using namespace vtk;
@@ -34,12 +44,20 @@ class vtkTimerUser : public vtkCommand
 {
 public:
   vtkSmartPointer<vtkRenderWindow> m_renderWindow; //to be copied from VTK instance
+  vtkSmartPointer<vtkPoints> m_pPoints;   // store the path
+  int m_iIndex;   // current index into the path
 
   // Important! the constructor
   static vtkTimerUser *New()
   {
     vtkTimerUser *pCallBack = new vtkTimerUser;
     return pCallBack;
+  }
+
+  void vtkTimerUser::setPath(const vtkSmartPointer<vtkPoints> & pPoints)
+  {
+    m_pPoints = pPoints;
+    m_iIndex = 0;
   }
 
   // Function that execute the main code of the Command
@@ -85,30 +103,80 @@ public:
   }
 };
 
+// Just for testing, a Loop subdivision algorithm to the input OBJ
+// the output is the subdivide mesh
+vtkSmartPointer<vtkPolyData> Subdivide(vtkSmartPointer<vtkPolyData> reader)
+{
+  // Subdivision filters only work on triangles
+  vtkSmartPointer<vtkTriangleFilter> triangles = vtkSmartPointer<vtkTriangleFilter>::New();
+  //triangles->SetInputConnection(reader-> ->GetOutputPort());
+  triangles->SetInputData(reader);
+  triangles->Update();
+  vtkSmartPointer<vtkPolyData> originalMesh = triangles->GetOutput();  // this is the original mesh actually
+
+  vtkSmartPointer<vtkPolyDataAlgorithm> subdivisionFilter = vtkSmartPointer<vtkLoopSubdivisionFilter >::New();
+  dynamic_cast<vtkLoopSubdivisionFilter *> (subdivisionFilter.GetPointer())->SetNumberOfSubdivisions(2);
+  subdivisionFilter->SetInputData(originalMesh);
+  subdivisionFilter->Update();
+
+  return subdivisionFilter->GetOutput();
+}
 
 int main (int argc, char *argv[])
 {
-  // polygonal model of a cone
-  vtkSmartPointer<vtkConeSource> cone = vtkSmartPointer<vtkConeSource>::New();
-  cone->SetResolution(50);
-  cone->SetHeight(4.0);
-  cone->SetRadius(1.0);
+  CNavigation navigation;
+  // Object to handle a path in the volume
+  //Graph theData;
 
-  // put the geometry of cone inside the pipeline
-  vtkSmartPointer<vtkPolyDataMapper> coneMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-  coneMapper->SetInputConnection(cone->GetOutputPort());
+  // Read the OBJ bronchi
+  //std::string filename = "Q:\\Experiments\\CTBronquiSeg\\CPAP\\LENS_P15_13_11_2015\\LENS_P15_13_11_2015_ESP_CPAP_Seg1.obj"; //relative path
+  std::string filename = "C:\\Users\\eramirez\\Desktop\\code\\bronchi labelling\\output.obj";
+  vtkSmartPointer<vtkOBJReader> readerOBJ = vtkSmartPointer<vtkOBJReader>::New();
+  readerOBJ->SetFileName(filename.c_str());
+  readerOBJ->Update();
+  //readerOBJ->Print(cout);
+
+  if (!navigation.openTXTFile("C:\\Users\\eramirez\\Desktop\\git\\BronchoX\\skel.txt"))
+    return EXIT_FAILURE;
+
+  // Set Navigation
+
+  navigation.computePath(98);
+
+  // put the geometry of volume inside the pipeline
+  vtkSmartPointer<vtkPolyDataMapper> volMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  //auto outputGeometry = Subdivide(readerOBJ->GetOutput());
+  //volMapper->SetInputData(outputGeometry);
+  volMapper->SetInputConnection(readerOBJ->GetOutputPort());
+
+  // put the geometry of points inside the pipeline
+  vtkSmartPointer<vtkPolyDataMapper> pointMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+ ///////// pointMapper->SetInputData(theData.getDrawablePoints());
+  //pointMapper->SetInputData(navigation.getDrawablePoints());
+  pointMapper->SetInputData(navigation.getDrawablePoints());
+
+
+  // Broncho actor
+  vtkSmartPointer<vtkActor> volumeActor = vtkSmartPointer<vtkActor>::New();
+  volumeActor->GetProperty()->SetDiffuseColor(0.90, 0.40, 0.25);  //red
+  volumeActor->SetMapper(volMapper);
 
   // actor handles properties, color, textures, and others
-  vtkSmartPointer<vtkActor> coneActor = vtkSmartPointer<vtkActor>::New();
+  vtkSmartPointer<vtkActor> pointActor = vtkSmartPointer<vtkActor>::New();
   //cone_actor->Print(cout);  //print on console information about cone
-  coneActor->GetProperty()->SetDiffuseColor(0.85, 0.75, 0.1);  //yellow
-  coneActor->SetMapper(coneMapper);
+  pointActor->GetProperty()->SetDiffuseColor(0.85, 0.75, 0.1);  //yellow
+  pointActor->SetMapper(pointMapper);
 
   // rendered generates the image to be displayed on some place (window/texture)
   vtkSmartPointer<vtkRenderer> rendered = vtkSmartPointer<vtkRenderer>::New();
   rendered->SetBackground(0.2, 0.2, 0.2);
-  rendered->AddActor(coneActor);
-  rendered->ResetCamera();  //to be visible to all actors inside scene
+  rendered->AddActor(pointActor);
+  rendered->AddActor(volumeActor);
+  // Set the camera
+  vtkSmartPointer<vtkCamera> tCamera = rendered->GetActiveCamera();
+  tCamera->SetPosition(242.29, 203.07, 488.58);
+  tCamera->SetFocalPoint(223.96, 202.18, 327.66);
+  //rendered->ResetCamera();  //to be visible to all actors inside scene
 
   // render window is the GUI
   vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
