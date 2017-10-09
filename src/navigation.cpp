@@ -20,10 +20,12 @@ bool LoadSkelPoints(const std::string & strFilename, Graph& theData)
   ifstream ifFile(strFilename);
   if (ifFile.is_open())
   {
+    int index = 0;
     while (!ifFile.eof())
     {
       GraphVertex vertex;
       ifFile >> vertex[1] >> vertex[0] >> vertex[2];
+      vertex.setIndex(index++);
       theData.addGraphVertex(vertex);
     }
     ifFile.close();
@@ -195,6 +197,27 @@ vtkSmartPointer<vtkPolyData> CNavigation::getSmoothPath(const int & i, const int
 //
 //}
 //
+
+vtkSmartPointer<vtkPolyData> CNavigation::getDrawingPath(const int & i, const int & j, std::string name) 
+{
+  assert(m_vPathParent.size()); //the computePath should be invoked first
+  vtkSmartPointer<vtkPolyData> completePath = vtkSmartPointer<vtkPolyData>::New();
+
+  //compute the nodes involves in the path, starting from i and finished in j (included)
+  std::vector<int> path;
+  if (pathInGraph(i, j, path))
+      path.insert(path.begin(), i); //insert the first one at the top, to complete the path
+  else 
+  {
+    cout << "There is no a path between " << i << " and " << j << endl;
+    return nullptr;
+  }
+
+  //m_graph.get
+  return m_graph.getPolyDataPath(path);
+
+  return completePath;
+}
 
 //mitk::DataNode::Pointer CNavigation::getDrawingPath(const int & i, const int & j, std::string name)
 //{

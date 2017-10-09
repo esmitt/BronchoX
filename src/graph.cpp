@@ -317,3 +317,23 @@ std::vector<int> Graph::primtMST(int src)			// Taking vertex 0 as source
   }
   return parent;
 }
+
+vtkSmartPointer<vtkPolyData> Graph::getPolyDataPath(std::vector<int> path)
+{
+  assert(m_vGraphVertexes.size());	//it should exists first
+  assert(path.size());	// and path should exists
+
+  vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
+  polydata->Allocate();
+
+  //fill the polydata
+  for (int i = 1; i < path.size(); i++)
+  {
+    vtkIdType line[2] = { path[i - 1], path[i] };
+    polydata->InsertNextCell(VTK_LINE, 2, line);
+  }
+
+  //set the points info into the polydata
+  polydata->SetPoints(m_vtkPoints);
+  return polydata;
+}

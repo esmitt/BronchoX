@@ -49,6 +49,11 @@ public:
 		m_iIndex = index;
 	}
 
+  void setIndex(const int& index)
+  {
+    this->m_iIndex = index;
+  }
+
 	GraphVertex(const GraphVertex &v)
 	{
 		m_Point[0] = v.m_Point[0];
@@ -132,7 +137,7 @@ public:
 
   std::vector<int> primtMST(int src = 0);
   
-  //vtkSmartPointer<vtkPolyData> getMSTDataPath(std::vector<int> path);	//MST data
+  vtkSmartPointer<vtkPolyData> getPolyDataPath(std::vector<int> path);  //MST data
   //vtkSmartPointer<vtkPolyData> getPolyMSTComplete(std::vector<int> path); // MST data
 
 

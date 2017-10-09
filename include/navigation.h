@@ -49,8 +49,11 @@ public:
 
   //// Return the datanode which contains the points in the skeleton
   vtkSmartPointer<vtkPolyData> getDrawablePoints() { return m_graph.getDrawablePoints(); }
+  
   //// Return the datanode which contains the connected lines between nodes
   //mitk::DataNode::Pointer getDrawableLines() { return m_graph.getDrawableLines(); }
+
+  vtkSmartPointer<vtkPolyData> getDrawingPath(const int & i, const int & j, std::string name);
   
   //testing
   Graph* getGraph() { return &m_graph; }
