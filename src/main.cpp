@@ -36,6 +36,8 @@
 using namespace cv;
 using namespace vtk;
 
+const int startIndex = 4657;
+
 
 class vtkLeftClicking : public vtkCallbackCommand 
 //class vtkLeftClicking : public vtkInteractorStyleTrackballCamera
@@ -60,13 +62,6 @@ public:
 
     auto a = pick->GetPickList();
     cout << a->GetNumberOfItems() << endl;
-    //auto b = pick->GetPickPosition();
-    //auto c = pick->GetPickFromList();
-    //auto d = pick->GetSelectionPoint();
-    //auto e = pick->GetRenderer();
-    //pick->
-    //cout << e << endl;
-    
 
     double* p = pick->GetPickPosition();
     cout << p[0] << " " << p[1] << " " << p[2] << endl;	//x, y, z
@@ -76,10 +71,12 @@ public:
       cout << "index: " << index << endl;
       //add actor
       vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-      mapper->SetInputData(navigation->getDrawingPath(98, index, "adsad"));
+      //mapper->SetInputData(navigation->getDrawingPath(startIndex, index, "adsad"));
+      mapper->SetInputData(navigation->getSmoothPath(startIndex, index));
+      cout << "asdadsadasdasda " << endl;
       vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
-      //actor->SetMapper(mapper);
-      //rendered->AddActor(actor);
+      actor->SetMapper(mapper);
+      rendered->AddActor(actor);
     }
   }
 };
@@ -221,15 +218,16 @@ int main (int argc, char *argv[])
 
   // Set Navigation
 
-  navigation.computePath(98);
-  //navigation.computeMST(4646);
-
+  //navigation.computePath(98);
+  navigation.computePath(startIndex);
+  //navigation.computeMST(startIndex);
+  
 
   // Mapper
   // lines
   vtkSmartPointer<vtkPolyDataMapper> linesMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
   //linesMapper->SetInputData(navigation.getDrawingPath(98, 2934, "blabla"));
-  linesMapper->SetInputData(navigation.getSmoothPath(98, 2934));
+  //linesMapper->SetInputData(navigation.getSmoothPath(startIndex, 2934));
 
   // put the geometry of volume inside the pipeline
   vtkSmartPointer<vtkPolyDataMapper> volMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -258,7 +256,7 @@ int main (int argc, char *argv[])
   //lines actor
   vtkSmartPointer<vtkActor> lineActor = vtkSmartPointer<vtkActor>::New();
   lineActor->GetProperty()->SetDiffuseColor(0.05, 0.75, 0.85);  //green
-  lineActor->SetMapper(linesMapper);
+  //lineActor->SetMapper(linesMapper);
 
   // rendered generates the image to be displayed on some place (window/texture)
   vtkSmartPointer<vtkRenderer> rendered = vtkSmartPointer<vtkRenderer>::New();
@@ -295,6 +293,7 @@ int main (int argc, char *argv[])
   vtkSmartPointer<vtkLeftClicking> leftCBInstance = vtkSmartPointer<vtkLeftClicking>::New();
   leftCBInstance->navigation = &navigation;
   leftCBInstance->graph = navigation.getGraph();
+  leftCBInstance->rendered = rendered;
  // Copy important values to be used on the class
   //tCBInstance->m_renderWindow = renderWindow;
   

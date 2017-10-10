@@ -1,6 +1,8 @@
 #include "navigation.h"
 #include <iterator>
 #include <algorithm>
+#include <vtkCardinalSpline.h>
+#include <vtkSplineFilter.h>
 
 CNavigation::CNavigation() 
 {
@@ -93,21 +95,57 @@ vtkSmartPointer<vtkPolyData> CNavigation::getSmoothPath(const int & i, const int
   }
 
   // spline object
-  vtkSmartPointer<vtkParametricSpline> spline = vtkSmartPointer<vtkParametricSpline>::New();
-  spline->SetPoints(m_graph.getPointsPath(path));	//get the points in the dijsktra's path
+  //vtkSmartPointer<vtkParametricSpline> spline = vtkSmartPointer<vtkParametricSpline>::New();
+  //spline->SetPoints(m_graph.getPointsPath(path));	//get the points in the dijsktra's path
 
-                                                  // function source
-  vtkSmartPointer<vtkParametricFunctionSource> functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
-  functionSource->SetParametricFunction(spline);
-  functionSource->Update();
+  //// function source
+  //vtkSmartPointer<vtkParametricFunctionSource> functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
+  //functionSource->SetParametricFunction(spline);
+  //functionSource->Update();
+
+  /////////////////////////////
+  vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
+  
+  vtkSmartPointer<vtkPoints> points = m_graph.getPointsPath(path);
+  vtkSmartPointer<vtkCellArray> lines = vtkSmartPointer<vtkCellArray>::New();
+  vtkIdType sizePoints = points->GetNumberOfPoints();
+  lines->InsertNextCell(sizePoints);
+  for (unsigned int i = 0; i < sizePoints; ++i)
+    lines->InsertCellPoint(i);
+  
+  polyData->SetLines(lines);
+  polyData->SetPoints(points);
+  
+  vtkSmartPointer<vtkCardinalSpline> newSpline = vtkSmartPointer<vtkCardinalSpline>::New();
+  //newSpline->SetLeftConstraint(2);
+  //newSpline->SetLeftValue(0.0);
+  //newSpline->SetRightConstraint(2);
+  //newSpline->SetRightValue(0.0);
+
+  vtkSmartPointer<vtkSplineFilter> splineFilter = vtkSmartPointer<vtkSplineFilter>::New();
+  splineFilter->SetInputData(polyData);
+  
+  splineFilter->SetNumberOfSubdivisions(polyData->GetNumberOfPoints() * 10);
+  //splineFilter->SetSpline(newSpline);
+  splineFilter->Update();
+
+  vtkSmartPointer<vtkPolyData> result = splineFilter->GetOutput();
+  cout << "points: " << result->GetNumberOfPoints() << endl;
+  cout << "lins: " << result->GetNumberOfLines() << endl;
+  return result;
 
   //the smooth output to follow
-  vtkSmartPointer<vtkPolyData> smoothPath = vtkSmartPointer<vtkPolyData>::New();
+  //vtkSmartPointer<vtkPolyData> smoothPath = vtkSmartPointer<vtkPolyData>::New();
   //smoothPath.TakeReference(functionSource->GetOutput());	//this is the smooth path to extract the points to follow a path with camera
   //smoothPath.TakeReference(functionSource->GetOutput()->New());
   //smoothPath = functionSource->GetOutput();
-  smoothPath->CopyStructure(functionSource->GetOutput());
-  return smoothPath;
+  //smoothPath->CopyStructure(functionSource->GetOutput());
+  
+  
+  //return functionSource->GetOutput();
+  
+  
+  //return smoothPath;
 }
 
 //mitk::DataNode::Pointer CNavigation::getMSTDrawingPath()
@@ -148,35 +186,7 @@ vtkSmartPointer<vtkPolyData> CNavigation::getSmoothPath(const int & i, const int
 //  return result;
 //}
 //
-//vtkSmartPointer<vtkPolyData> CNavigation::getSmoothPath(const int & i, const int &j)
-//{
-//  //compute the nodes involves in the path, starting from i and finished in j (included)
-//  std::vector<int> path;
-//  if (pathInGraph(i, j, path))
-//    path.insert(path.begin(), i); //insert the first one at the top, to complete the path
-//  else
-//  {
-//    cout << "There is no a path between " << i << " and " << j << endl;
-//    return nullptr;
-//  }
-//  
-//  // spline object
-//  vtkSmartPointer<vtkParametricSpline> spline = vtkSmartPointer<vtkParametricSpline>::New();
-//  spline->SetPoints(m_graph.getPointsPath(path)); //get the points in the dijsktra's path
-//
-//  // function source
-//  vtkSmartPointer<vtkParametricFunctionSource> functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
-//  functionSource->SetParametricFunction(spline);
-//  functionSource->Update();
-//
-//  //the smooth output to follow
-//  vtkSmartPointer<vtkPolyData> smoothPath = vtkSmartPointer<vtkPolyData>::New();
-//  //smoothPath.TakeReference(functionSource->GetOutput());  //this is the smooth path to extract the points to follow a path with camera
-//  //smoothPath.TakeReference(functionSource->GetOutput()->New());
-//  //smoothPath = functionSource->GetOutput();
-//  smoothPath->CopyStructure(functionSource->GetOutput());
-//  return smoothPath;
-//}
+
 //
 //mitk::DataNode::Pointer CNavigation::getSmoothDrawingPath(vtkSmartPointer<vtkPolyData> path, std::string name)
 //{
