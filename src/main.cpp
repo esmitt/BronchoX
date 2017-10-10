@@ -45,13 +45,17 @@ class vtkLeftClicking : public vtkCallbackCommand
 public:
   Graph* graph;
   CNavigation* navigation;
+  vtkSmartPointer<vtkPolyData> m_path = nullptr;
   vtkSmartPointer<vtkRenderer> rendered;  //to add the actor
+  int iFollowPath = 0;
+  vtkSmartPointer<vtkCamera> m_Camera;
 
   static vtkLeftClicking *New()
   {
     vtkLeftClicking *pCallBack = new vtkLeftClicking;
     return pCallBack;
   }
+
   virtual void Execute(vtkObject *caller, unsigned long eventId, void * vtkNotUsed(callData))
   {
     vtkSmartPointer<vtkRenderWindowInteractor> interactor = vtkRenderWindowInteractor::SafeDownCast(caller);
@@ -66,18 +70,31 @@ public:
     double* p = pick->GetPickPosition();
     cout << p[0] << " " << p[1] << " " << p[2] << endl;	//x, y, z
     int index = graph->getID(p[0], p[1], p[2]);
-    if (index >= 0 && p[0] != 0) 
+    if (index >= 0 && p[0] != 0 && iFollowPath == 0)
     {
       cout << "index: " << index << endl;
       //add actor
       vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
       //mapper->SetInputData(navigation->getDrawingPath(startIndex, index, "adsad"));
-      mapper->SetInputData(navigation->getSmoothPath(startIndex, index));
-      cout << "asdadsadasdasda " << endl;
+      m_path = navigation->getSmoothPath(startIndex, index);
+      mapper->SetInputData(m_path);
       vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
       actor->SetMapper(mapper);
+      actor->GetProperty()->SetDiffuseColor(0.1, 0.15, 0.9);
       rendered->AddActor(actor);
+      iFollowPath = 1;
     }
+
+    //else    // path is done, then follow the path
+    //{
+    //  if (iFollowPath > 0 && m_path != nullptr && iFollowPath < m_path->GetNumberOfPoints() - 1)
+    //  {
+    //    double* point = m_path->GetPoint(iFollowPath);
+    //    m_Camera->SetPosition(point);
+    //    m_Camera->SetFocalPoint(m_path->GetPoint(iFollowPath + 1));
+    //    iFollowPath++;  //next point
+    //  }
+    //}
   }
 };
 //
@@ -92,7 +109,11 @@ class vtkTimerUser : public vtkCallbackCommand
 public:
   //vtkSmartPointer<vtkRenderWindow> m_renderWindow; //to be copied from VTK instance
   vtkSmartPointer<vtkPoints> m_pPoints;   // store the path
-  int m_iIndex;   // current index into the path
+  int m_iIndex = 0;   // current index into the path
+  //vtkSmartPointer<vtkPolyData> m_path = nullptr;
+  vtkSmartPointer<vtkPoints> m_path = nullptr;
+  vtkSmartPointer<vtkCamera> m_Camera;
+  VideoWriter m_outVideo;
 
   // Important! the constructor
   static vtkTimerUser *New()
@@ -128,13 +149,18 @@ public:
     // Just in case, add some try/catch about operations in OpenCV
     try
     {
-      cv::blur(matImage, matImage, Size(7, 7), Point(-1, -1));
+      cv::blur(matImage, matImage, Size(5, 5), Point(-1, -1));
     }
     catch (cv::Exception ex)
     {
       cout << ex.what() << endl;
     }
     imshow("OpenCV", matImage); // show the result
+    
+    if (m_outVideo.isOpened()) 
+    {
+      m_outVideo << matImage;
+    }
 
     // It is possible to write the output image on a file
     //const std::string str = "image.jpg";
@@ -167,6 +193,28 @@ public:
     //  
     //  }
     //}
+
+    // Follow the path
+    int d = m_path->GetNumberOfPoints();
+    if (m_path != nullptr && m_iIndex >=0 && m_iIndex < d - 1)
+    {
+      if(m_iIndex == 0 && !m_outVideo.isOpened()) //first time
+      {
+        cv::String name("out.avi");
+        m_outVideo.open(name, 0xffffffff, 15.0, cv::Size(800, 600));
+      }
+      //double* point = new double[3];
+      double* point = m_path->GetPoint(m_iIndex);
+      m_Camera->SetPosition(point);
+      m_Camera->SetFocalPoint(m_path->GetPoint(m_iIndex + 1));
+
+      // Reset tehe starting point
+      if (m_iIndex == m_path->GetNumberOfPoints() - 1)
+      {
+        m_iIndex = -1;
+      }
+      m_iIndex++;
+    }
 
     // Get the size of window & invoke the OpenCv calculations
     int windowSize[2];
@@ -222,12 +270,25 @@ int main (int argc, char *argv[])
   navigation.computePath(startIndex);
   //navigation.computeMST(startIndex);
   
+  // Extract the points in the path
+  vtkSmartPointer<vtkPoints> path = navigation.getSmoothPath(startIndex, 2749)->GetPoints(); //index of the point in the path
 
   // Mapper
   // lines
   vtkSmartPointer<vtkPolyDataMapper> linesMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
   //linesMapper->SetInputData(navigation.getDrawingPath(98, 2934, "blabla"));
-  //linesMapper->SetInputData(navigation.getSmoothPath(startIndex, 2934));
+  vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
+  polydata->Allocate();
+  for (int i = 1; i < path->GetNumberOfPoints(); i++)
+  {
+    vtkIdType line[2];
+    line[0] = i - 1;
+    line[1] = i;
+    //vtkIdType line[2] = { path->[i - 1], path[i] };
+    polydata->InsertNextCell(VTK_LINE, 2, line);
+  }
+  polydata->SetPoints(path);
+  linesMapper->SetInputData(polydata);
 
   // put the geometry of volume inside the pipeline
   vtkSmartPointer<vtkPolyDataMapper> volMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -256,13 +317,13 @@ int main (int argc, char *argv[])
   //lines actor
   vtkSmartPointer<vtkActor> lineActor = vtkSmartPointer<vtkActor>::New();
   lineActor->GetProperty()->SetDiffuseColor(0.05, 0.75, 0.85);  //green
-  //lineActor->SetMapper(linesMapper);
+  lineActor->SetMapper(linesMapper);
 
   // rendered generates the image to be displayed on some place (window/texture)
   vtkSmartPointer<vtkRenderer> rendered = vtkSmartPointer<vtkRenderer>::New();
   rendered->SetBackground(0.2, 0.2, 0.2);
-  rendered->AddActor(pointActor);
-  //rendered->AddActor(volumeActor);
+  //rendered->AddActor(pointActor);
+  rendered->AddActor(volumeActor);
   rendered->AddActor(lineActor);
   // Set the camera
   vtkSmartPointer<vtkInteractorStyleTrackballCamera> cameraStyle = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
@@ -294,9 +355,24 @@ int main (int argc, char *argv[])
   leftCBInstance->navigation = &navigation;
   leftCBInstance->graph = navigation.getGraph();
   leftCBInstance->rendered = rendered;
+  leftCBInstance->m_Camera = tCamera;
  // Copy important values to be used on the class
   //tCBInstance->m_renderWindow = renderWindow;
   
+  tCBInstance->m_Camera = tCamera;
+  tCBInstance->m_path = path;
+  //cout << "a: "<< tCBInstance->m_path->GetNumberOfCells() << endl;
+  //cout << "b: " << tCBInstance->m_path->GetNumberOfLines() << endl;
+  //cout << "c: " << tCBInstance->m_path->GetNumberOfPoints() << endl;
+  //cout << "d: " << tCBInstance->m_path->GetNumberOfVerts() << endl;
+
+  //vtkSmartPointer<vtkPoints> points = tCBInstance->m_path->GetPoints();
+  //for (int i = 0; i < points->GetNumberOfPoints(); i++)
+  //{
+  //  //double* p = points->GetPoint(i);
+  //  points->Print(cout);
+  //}
+
   renderWindowInteractor->AddObserver(vtkCommand::TimerEvent, tCBInstance);
   renderWindowInteractor->AddObserver(vtkCommand::LeftButtonPressEvent, leftCBInstance);
 

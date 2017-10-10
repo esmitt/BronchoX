@@ -117,16 +117,16 @@ vtkSmartPointer<vtkPolyData> CNavigation::getSmoothPath(const int & i, const int
   polyData->SetPoints(points);
   
   vtkSmartPointer<vtkCardinalSpline> newSpline = vtkSmartPointer<vtkCardinalSpline>::New();
-  //newSpline->SetLeftConstraint(2);
-  //newSpline->SetLeftValue(0.0);
-  //newSpline->SetRightConstraint(2);
-  //newSpline->SetRightValue(0.0);
+  newSpline->SetLeftConstraint(2);
+  newSpline->SetLeftValue(0.0);
+  newSpline->SetRightConstraint(2);
+  newSpline->SetRightValue(0.0);
 
   vtkSmartPointer<vtkSplineFilter> splineFilter = vtkSmartPointer<vtkSplineFilter>::New();
   splineFilter->SetInputData(polyData);
   
   splineFilter->SetNumberOfSubdivisions(polyData->GetNumberOfPoints() * 10);
-  //splineFilter->SetSpline(newSpline);
+  splineFilter->SetSpline(newSpline);
   splineFilter->Update();
 
   vtkSmartPointer<vtkPolyData> result = splineFilter->GetOutput();
