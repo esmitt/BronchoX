@@ -265,7 +265,6 @@ int main (int argc, char *argv[])
     return EXIT_FAILURE;
 
   // Set Navigation
-
   //navigation.computePath(98);
   navigation.computePath(startIndex);
   //navigation.computeMST(startIndex);

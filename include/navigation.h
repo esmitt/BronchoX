@@ -1,4 +1,5 @@
-#pragma once
+#define _NAVIGATION_H_
+
 
 #include <string>
 #include <vtkSmartPointer.h>
@@ -26,8 +27,8 @@ protected:
   void pathInMST(int source, int destination, std::vector<int>& path);
 
 public:
-  CNavigation();
-  ~CNavigation();
+  CNavigation() = default;
+  virtual ~CNavigation() = default;
 
   // Open a TXT file
   bool openTXTFile(const std::string & strFilename);

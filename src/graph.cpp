@@ -17,7 +17,7 @@ Graph::~Graph() {}
 /// Function to add a single vertex into the Graph. Also, add the vtkPoint
 ///
 /// @param v vertex to add into the graph
-void Graph::addGraphVertex(GraphVertex v)
+void Graph::addGraphVertex(CGraphVertex v)
 {
 	m_vGraphVertexes.push_back(v);
 	m_vtkPoints->InsertNextPoint(v.get_ptr());
@@ -31,7 +31,7 @@ void Graph::constructVTKPoints()
 	
 	m_vtkPoints->SetNumberOfPoints(m_vGraphVertexes.size());	//set the number of vertexes for efficiency
 	//copy points into
-	std::for_each(m_vGraphVertexes.begin(), m_vGraphVertexes.end(), [&](GraphVertex& v)
+	std::for_each(m_vGraphVertexes.begin(), m_vGraphVertexes.end(), [&](CGraphVertex& v)
 	{
 		m_vtkPoints->SetPoint(v.getIndex(), v.get_ptr());
 	});
@@ -299,9 +299,9 @@ std::vector<int> Graph::primtMST(int src)			// Taking vertex 0 as source
   //reserve the space
   m_vGraphMST.reserve(m_vGraphVertexes.size());
   // Copy vertexes (IT IS NOT THE BEST WAY, IS JUST TESTING)
-  std::for_each(m_vGraphVertexes.begin(), m_vGraphVertexes.end(), [&](GraphVertex & v)
+  std::for_each(m_vGraphVertexes.begin(), m_vGraphVertexes.end(), [&](CGraphVertex & v)
   {
-    GraphVertex newVertex(v.getIndex(), v.get_ptr());
+    CGraphVertex newVertex(v.getIndex(), v.get_ptr());
     m_vGraphMST.push_back(newVertex);
   });
 

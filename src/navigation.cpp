@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <vtkCardinalSpline.h>
 #include <vtkSplineFilter.h>
-
+/*
 CNavigation::CNavigation() 
 {
 
@@ -13,7 +13,7 @@ CNavigation::~CNavigation()
 {
 
 }
-
+*/
 // Load the file with skeleton points
 // the format is x y z, one per line
 // @param theData where add points
@@ -25,7 +25,7 @@ bool LoadSkelPoints(const std::string & strFilename, Graph& theData)
     int index = 0;
     while (!ifFile.eof())
     {
-      GraphVertex vertex;
+      CGraphVertex vertex;
       ifFile >> vertex[1] >> vertex[0] >> vertex[2];
       vertex.setIndex(index++);
       theData.addGraphVertex(vertex);

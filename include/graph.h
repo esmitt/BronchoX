@@ -13,107 +13,25 @@
 #include <vtkSmartPointer.h>
 #include <vtkVertexGlyphFilter.h>
 
+#include "graphvertex.h"
+
 // @author Esmitt Ramirez
 // @date 10/2017
 
-/// Struct to handle a graph's vertex. It stores an ID, a 3D point, and a set of linked neighbours
-struct GraphVertex
-{
-private:
-	int m_iIndex;	//index of the GraphVertex
-	std::set <std::pair<int, double>> m_vNeighbours;	//store a pair of values (id, distance) into a set
-	double m_Point[3];	//point 3D
-
-public:
-	GraphVertex()
-	{
-		m_Point[0] = m_Point[1] = m_Point[2] = 0;
-		m_iIndex = -1;
-	}
-
-	GraphVertex(double* value)
-	{
-		m_Point[0] = value[0]; m_Point[1] = value[1]; m_Point[2] = value[2];
-		m_iIndex = -1;
-	}
-
-	GraphVertex(int index, double* value)
-	{
-		m_Point[0] = value[0]; m_Point[1] = value[1]; m_Point[2] = value[2];
-		m_iIndex = index;
-	}
-
-	GraphVertex(int index, double x, double y, double z)
-	{
-		m_Point[0] = x; m_Point[1] = y; m_Point[2] = z;
-		m_iIndex = index;
-	}
-
-  void setIndex(const int& index)
-  {
-    this->m_iIndex = index;
-  }
-
-	GraphVertex(const GraphVertex &v)
-	{
-		m_Point[0] = v.m_Point[0];
-		m_Point[1] = v.m_Point[1];
-		m_Point[2] = v.m_Point[2];
-		m_iIndex = v.m_iIndex;
-	}
-
-	~GraphVertex() {}
-
-	//functions
-	double & operator[](int index) { return m_Point[index]; }
-
-	//add an edge
-	void link(int index, double distance = 0)
-	{
-		m_vNeighbours.insert(std::make_pair(index, distance));
-	}
-
-	inline int getIndex() { return m_iIndex; }
-
-	double* get_ptr() { return m_Point; }
-
-	std::set<std::pair<int, double>>& getNeighbours()
-	{
-		return m_vNeighbours;
-	}
-
-	void printNeighbours()
-	{
-		auto iIt = m_vNeighbours.begin();
-		while (iIt != m_vNeighbours.end())
-		{
-			std::cout << "(" << m_iIndex << ", " << iIt->first << ") = " << iIt->second << endl;
-			iIt++;
-		}
-	}
-
-  //testing
-  bool isNear(const double p[3])
-  {
-    if (vtkMath::Distance2BetweenPoints(p, m_Point) < 0.1001f)
-      return true;
-    return false;
-  }
-};
 
 /// Class to handle a directed/undirected graph using an adjacency list.
 /// The vertexes are GraphVertex datatype, also stores vtkPoints to render
 class Graph
 {
 private:
-	std::vector<GraphVertex> m_vGraphVertexes;
+	std::vector<CGraphVertex> m_vGraphVertexes;
 	vtkSmartPointer<vtkPoints> m_vtkPoints;
   typedef std::pair<int, int> tEdge;	//to define an edge as the link between two nodes represented by their indexes
                                       //a new graph using the MST (reduced from the original)
-  std::vector<GraphVertex> m_vGraphMST;
+  std::vector<CGraphVertex> m_vGraphMST;
 
 public:
-	void addGraphVertex(GraphVertex v);
+	void addGraphVertex(CGraphVertex v);
 	void constructVTKPoints();
 	void addEdgeIndex(int index1, int index2);
 
@@ -161,7 +79,7 @@ public:
 	//print for testing
 	void print()
 	{
-		std::for_each(m_vGraphVertexes.begin(), m_vGraphVertexes.end(), [](GraphVertex v)
+		std::for_each(m_vGraphVertexes.begin(), m_vGraphVertexes.end(), [](CGraphVertex v)
 		{
 			std::cout << v.getIndex() << std::endl;
 		});
