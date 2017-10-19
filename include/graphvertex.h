@@ -37,7 +37,10 @@ public:
   /// @param pValue a pointer of 3 positions of double
   CGraphVertex(int iIndex, const double& dX, double dY, double dZ);
 
-  CGraphVertex(const CGraphVertex &v);
+  /// Constructor with 1 parameter
+  /// @param iIndex id of this node (id inside the CGraph)
+  /// @param pValue a pointer of 3 positions of double
+  CGraphVertex(const CGraphVertex &vertex);
 
   ~CGraphVertex() {}
 
@@ -63,7 +66,7 @@ public:
 
 	void printNeighbours()
 	{
-		auto iIt = m_vNeighbours.begin();
+    auto iIt = m_vNeighbours.begin();
 		while (iIt != m_vNeighbours.end())
 		{
 			std::cout << "(" << m_iIndex << ", " << iIt->first << ") = " << iIt->second << std::endl;

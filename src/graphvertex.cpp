@@ -24,13 +24,10 @@ CGraphVertex::CGraphVertex(int iIndex, const double& dX, double dY, double dZ) :
   m_iIndex{ iIndex }
 {}
 
-CGraphVertex::CGraphVertex(const CGraphVertex &v)
-{
-  m_vPoint[0] = v.m_vPoint[0];
-  m_vPoint[1] = v.m_vPoint[1];
-  m_vPoint[2] = v.m_vPoint[2];
-  m_iIndex = v.m_iIndex;
-}
+CGraphVertex::CGraphVertex(const CGraphVertex &vertex) :
+  m_vPoint{ vertex.m_vPoint[0], vertex.m_vPoint[1], vertex.m_vPoint[2] },
+  m_iIndex{ vertex.m_iIndex}
+{}
 
 void CGraphVertex::setIndex(const int& index)
 {
