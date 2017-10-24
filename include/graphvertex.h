@@ -37,9 +37,8 @@ public:
   /// @param pValue a pointer of 3 positions of double
   CGraphVertex(int iIndex, const double& dX, double dY, double dZ);
 
-  /// Constructor with 1 parameter
-  /// @param iIndex id of this node (id inside the CGraph)
-  /// @param pValue a pointer of 3 positions of double
+  /// Copy constructorparameter
+  /// @param vertex object of a vertex
   CGraphVertex(const CGraphVertex &vertex);
 
   ~CGraphVertex() {}
