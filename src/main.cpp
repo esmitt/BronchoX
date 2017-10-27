@@ -255,14 +255,26 @@ int main (int argc, char *argv[])
 
   // Read the OBJ bronchi
   //std::string filename = "Q:\\Experiments\\CTBronquiSeg\\CPAP\\LENS_P15_13_11_2015\\LENS_P15_13_11_2015_ESP_CPAP_Seg1.obj"; //relative path
-  std::string filename = "C:\\Users\\eramirez\\Desktop\\code\\bronchi labelling\\output.obj";
+  std::string filename = "C:\\code\\BronchoX\\bronchi labelling\\output.obj";
   vtkSmartPointer<vtkOBJReader> readerOBJ = vtkSmartPointer<vtkOBJReader>::New();
   readerOBJ->SetFileName(filename.c_str());
+  
+  //vtkSmartPointer<CErrorObserver> errorObserver = vtkSmartPointer<CErrorObserver>::New();
+  readerOBJ->AddObserver(vtkCommand::ErrorEvent, CUtility::getInstance()->GetErrorInstance());
   readerOBJ->Update();
+  if (CUtility::getInstance()->GetErrorInstance()->GetError())
+  {
+    std::cout << "Caught error! " << CUtility::getInstance()->GetErrorInstance()->GetErrorMessage();
+    return EXIT_FAILURE;
+  }
+
   //readerOBJ->Print(cout);
 
-  if (!navigation.openTXTFile("C:\\Users\\eramirez\\Desktop\\git\\BronchoX\\skel.txt"))
+  if (!navigation.openTXTFile("C:\\code\\BronchoX\\skel.txt")) 
+  {
+    std::cout << "Error opening the TXT skeleton file" << endl;
     return EXIT_FAILURE;
+  }
 
   // Set Navigation
   //navigation.computePath(98);

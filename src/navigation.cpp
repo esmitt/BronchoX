@@ -40,7 +40,7 @@ bool LoadSkelPoints(const std::string & strFilename, Graph& theData)
 bool CNavigation::openTXTFile(const std::string & strFilename)
 {
   if (!LoadSkelPoints(strFilename, m_graph))
-    return EXIT_FAILURE;
+    return false;
   return true;
 }
 

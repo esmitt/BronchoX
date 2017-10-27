@@ -19,6 +19,15 @@ CUtility* CUtility::getInstance()
 CUtility::CUtility()
 {}
 
+vtkSmartPointer<CErrorObserver> CUtility::GetErrorInstance()
+{
+  if (m_error == nullptr) 
+  {
+    m_error = vtkSmartPointer<CErrorObserver>::New();
+  }
+  return m_error;
+}
+
 /// Determines the equivalent subscript values corresponding to the absolute index dimension of a multidimensional array.
 /// @param siz size of the N-dimensional matrix
 /// @param N the dimensions of the matrix
